@@ -1,0 +1,152 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/loadBalancers",
+            "apiVersion": "2024-07-01",
+            "name": "lb1",
+            "location": "eastus2",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "properties": {
+                "frontendIPConfigurations": [
+                    {
+                        "name": "lb-ip",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/frontendIPConfigurations/lb-ip')]",
+                        "properties": {
+                            "privateIPAddress": "172.16.0.5",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "/subscriptions/3250d4b5-6982-4ca2-9161-94ef6dddf330/resourceGroups/rg1/providers/Microsoft.Network/virtualNetworks/vnet-1/subnets/snet-1"
+                            },
+                            "privateIPAddressVersion": "IPv4"
+                        },
+                        "zones": [
+                            "3",
+                            "2",
+                            "1"
+                        ]
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "pool1",
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'lb1', 'pool1')]",
+                        "properties": {
+                            "loadBalancerBackendAddresses": [
+                                {
+                                    "name": "rg1_vm-1867_z1ipconfig1",
+                                    "properties": {}
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "lbrule1",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/loadBalancingRules/lbrule1')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/frontendIPConfigurations/lb-ip')]"
+                            },
+                            "frontendPort": 80,
+                            "backendPort": 80,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 4,
+                            "protocol": "Tcp",
+                            "enableTcpReset": false,
+                            "loadDistribution": "Default",
+                            "disableOutboundSnat": true,
+                            "enableConnectionTracking": false,
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'lb1', 'pool1')]"
+                            },
+                            "backendAddressPools": [
+                                {
+                                    "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'lb1', 'pool1')]"
+                                }
+                            ],
+                            "probe": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/probes/probe1')]"
+                            }
+                        }
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "probe1",
+                        "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/probes/probe1')]",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "port": 80,
+                            "intervalInSeconds": 5,
+                            "numberOfProbes": 1,
+                            "probeThreshold": 1,
+                            "noHealthyBackendsBehavior": "AllProbedDown"
+                        }
+                    }
+                ],
+                "inboundNatRules": [
+                    {
+                        "name": "allowrdp",
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatRules', 'lb1', 'allowrdp')]",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/frontendIPConfigurations/lb-ip')]"
+                            },
+                            "frontendPort": 5001,
+                            "backendPort": 3389,
+                            "enableFloatingIP": false,
+                            "idleTimeoutInMinutes": 4,
+                            "protocol": "Tcp",
+                            "enableTcpReset": false
+                        }
+                    }
+                ],
+                "outboundRules": [],
+                "inboundNatPools": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers/backendAddressPools",
+            "apiVersion": "2024-07-01",
+            "name": "lb1/pool1",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/loadBalancers', 'lb1')]"
+            ],
+            "properties": {
+                "loadBalancerBackendAddresses": [
+                    {
+                        "name": "rg1_vm-1867_z1ipconfig1",
+                        "properties": {}
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/loadBalancers/inboundNatRules",
+            "apiVersion": "2024-07-01",
+            "name": "lb1/allowrdp",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/loadBalancers', 'lb1')]"
+            ],
+            "properties": {
+                "frontendIPConfiguration": {
+                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'lb1'), '/frontendIPConfigurations/lb-ip')]"
+                },
+                "frontendPort": 5001,
+                "backendPort": 3389,
+                "enableFloatingIP": false,
+                "idleTimeoutInMinutes": 4,
+                "protocol": "Tcp",
+                "enableTcpReset": false
+            }
+        }
+    ]
+}
